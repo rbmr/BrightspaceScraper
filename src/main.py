@@ -2,20 +2,22 @@ import json
 import re
 import requests
 from pathlib import Path
-from urllib.parse import unquote
+from urllib.parse import unquote, urlparse
 from typing import Optional, Dict, List
+
+import typer
 
 # Import your existing models
 from models import Directory, File, Link, Node
 
 
 class BrightspaceParser:
-    def __init__(self, auth_path: str = "auth.json"):
+    def __init__(self, base_url: str, auth_path: Path):
         self.session = requests.Session()
-        self.base_url = "https://brightspace.tudelft.nl"
+        self.base_url = base_url
         self._setup_auth(auth_path)
 
-    def _setup_auth(self, auth_path: str):
+    def _setup_auth(self, auth_path: Path):
         with open(auth_path, 'r') as f:
             data = json.load(f)
 
@@ -174,7 +176,21 @@ class BrightspaceParser:
         path = unquote(url.split('?')[0])
         return path.split('/')[-1]
 
+def main(
+    course_url: str = typer.Argument(..., help="The URL of the course content (e.g., https://brightspace.tudelft.nl/d2l/le/content/12345/Home)"),
+    output: Path = typer.Option(Path("./downloads"), "--output", "-o", help="Output directory for downloaded content"),
+    auth: Path = typer.Option(Path("auth.json"), "--auth", "-a", help="Path to the auth.json file")
+):
+    """
+    Scrape a Brightspace course and download its content.
+    """
+    # Heuristic to find base_url
+    parsed_uri = urlparse(course_url)
+    base_url = f"{parsed_uri.scheme}://{parsed_uri.netloc}"
+    print(f"Detected Base URL: {base_url}")
+
+    scraper = BrightspaceParser(base_url=base_url, auth_path=auth)
+    scraper.parse_course(course_url, output)
 
 if __name__ == "__main__":
-    parser = BrightspaceParser()
-    parser.parse_course("https://brightspace.tudelft.nl/d2l/le/content/774741/Home", Path("./downloads"))
+    typer.run(main)
