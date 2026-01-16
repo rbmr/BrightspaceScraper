@@ -44,7 +44,7 @@ Brightspace uses complex authentication (SSO, MFA) which is difficult to replica
 1.  Run the auth script with your university's Brightspace URL:
     ```bash
     # Example for TU Delft
-    python src/auth.py [https://brightspace.tudelft.nl](https://brightspace.tudelft.nl)
+    python src/auth.py https://brightspace.tudelft.nl
     ```
 
 2.  A Chromium browser window will open.
@@ -72,7 +72,7 @@ Once authenticated, you can scrape a specific course.
 
     **Example:**
     ```bash
-    python src/main.py [https://brightspace.tudelft.nl/d2l/le/content/54321/Home](https://brightspace.tudelft.nl/d2l/le/content/54321/Home) --output ./my_courses
+    python src/main.py https://brightspace.tudelft.nl/d2l/le/content/54321/Home --output ./my_courses
     ```
 
 3.  **Output:**
