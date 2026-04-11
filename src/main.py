@@ -1,3 +1,5 @@
+# src/main.py
+
 import json
 import re
 import requests
@@ -7,11 +9,11 @@ from typing import Optional, Dict, List
 
 import typer
 
-# Import your existing models
-from models import Directory, File, Link, Node
+from models import Directory, File, Link, Node, Assignment
 
 
 class BrightspaceParser:
+
     def __init__(self, base_url: str, auth_path: Path):
         self.session = requests.Session()
         self.base_url = base_url
@@ -125,7 +127,7 @@ class BrightspaceParser:
         url = topic_data.get('Url', '')
 
         # KEY FIX: Use ActivityType and correct IDs
-        # 1 = File, 2 = Link
+        # 1 = File, 2 = Link, 3 = Dropbox (Assignments)
         activity_type = topic_data.get('ActivityType', -1)
 
         if activity_type == 1:  # File
@@ -134,19 +136,29 @@ class BrightspaceParser:
             download_url = f"{self.base_url}{url}"
 
             if not save_path.exists():
-                print(f"  ⬇️  Downloading: {title}")
+                print(f"  ⬇  Downloading: {title}")
                 self._download_file(download_url, save_path)
             else:
-                print(f"  ⏭️  Skipping (exists): {title}")
+                print(f"  ⏭  Skipping (exists): {title}")
 
             return File(name=title, description=description, file=save_path)
 
         elif activity_type == 2:  # Link
             return Link(name=title, description=description, url=url)
 
+        elif activity_type == 3: # DropBox (Assignment)
+            due_date = topic_data.get('DueDate')
+            print(f"  📝  Found Assignment: {title}")
+            return Assignment(
+                name=title,
+                description=description,
+                url=url,
+                due_date=due_date
+            )
+
         else:
             # Debug: print what we are skipping so you know if we missed something
-            # print(f"  ⚠️ Skipping unknown type {activity_type} for: {title}")
+            print(f"  ⚠️ Skipping unknown type {activity_type} for: {title}")
             pass
 
         return None
