@@ -1,4 +1,4 @@
-# src.models
+# src/models.py
 
 from __future__ import annotations
 from typing import List, Optional, Union, Literal
@@ -31,11 +31,16 @@ class Link(Node):
     node_type: Literal['link'] = 'link'
     url: AnyUrl
 
+class Assignment(Node):
+    node_type: Literal['assignment'] = 'assignment'
+    url: Optional[str] = None
+    due_date: Optional[str] = None
+
 class Directory(Node):
     node_type: Literal['directory'] = 'directory'
     children: List[NodeType] = Field(default_factory=list)
 
-NodeType = Union[Directory, File, Link]
+NodeType = Union[Directory, File, Link, Assignment]
 
 Directory.model_rebuild()
 
