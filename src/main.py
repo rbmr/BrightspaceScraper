@@ -40,9 +40,12 @@ class BrightspaceParser:
                 "Authorization": f"Bearer {token}",
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
             })
-            print("✅ Authenticated with Bearer Token.")
+            print("[OK] Authenticated with Bearer Token.")
         else:
-            raise ValueError("❌ Could not find Bearer token in auth.json.")
+            self.session.headers.update({
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            })
+            print("[Warning] Could not find Bearer token in auth.json, proceeding with cookies...")
 
     def parse_course(self, course_url: str, output_root: Path) -> Directory:
         match = re.search(r"/content/(\d+)", course_url)
@@ -52,7 +55,7 @@ class BrightspaceParser:
 
         # 1. Fetch Course Name
         course_name = f"Course_{course_id}"
-        print(f"🔍 Parsing Course ID: {course_id}")
+        print(f"[Search] Parsing Course ID: {course_id}")
 
         # 2. Fetch Table of Contents
         versions_to_try = ["1.82", "1.74", "1.70", "1.67", "1.50"]
@@ -65,13 +68,13 @@ class BrightspaceParser:
                 endpoint = f"/d2l/api/le/{ver}/{course_id}/content/toc?ignoreDateRestrictions=true"
                 toc_data = self._get_json(endpoint)
                 if toc_data:
-                    print(f"   ✅ Success with API v{ver}")
+                    print(f"   [OK] Success with API v{ver}")
                     break
             except Exception as e:
                 continue
 
         if not toc_data:
-            raise Exception("❌ Failed to fetch Table of Contents.")
+            raise Exception("[Error] Failed to fetch Table of Contents.")
 
         # Try to find a better course name from the root module if available
         if 'Modules' in toc_data and len(toc_data['Modules']) > 0:
@@ -90,7 +93,7 @@ class BrightspaceParser:
 
         root_node = Directory(name=course_name, children=children)
         root_node.save_json(course_root / "course_structure.json")
-        print(f"\n✅ Done! Exported to: {course_root}")
+        print(f"\n[OK] Done! Exported to: {course_root}")
         return root_node
 
     def _process_module(self, module_data: Dict, parent_path: Path) -> Optional[Directory]:
@@ -134,10 +137,10 @@ class BrightspaceParser:
             download_url = f"{self.base_url}{url}"
 
             if not save_path.exists():
-                print(f"  ⬇️  Downloading: {title}")
+                print(f"  [Download] Downloading: {title}")
                 self._download_file(download_url, save_path)
             else:
-                print(f"  ⏭️  Skipping (exists): {title}")
+                print(f"  [Skip] Skipping (exists): {title}")
 
             return File(name=title, description=description, file=save_path)
 
@@ -167,7 +170,7 @@ class BrightspaceParser:
                     for chunk in r.iter_content(chunk_size=8192):
                         f.write(chunk)
         except Exception as e:
-            print(f"  ❌ Failed to download {url}: {e}")
+            print(f"  [Error] Failed to download {url}: {e}")
 
     def _clean_name(self, name: str) -> str:
         return re.sub(r'[<>:"/\\|?*]', '_', name).strip()
